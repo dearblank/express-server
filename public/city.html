@@ -1,0 +1,77 @@
+<html>
+
+<head>
+    <title>City</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="./stylesheets/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        .city-search {
+            display: flex;
+            margin-top: 20px;
+        }
+
+        .city-search-button {
+            width: 120px;
+            margin-left: 10px;
+        }
+
+        .city-list {
+            display: flex;
+            margin: 10px 0;
+        }
+
+        .city-list span {
+            flex: 1;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="city">
+        <el-card class="box-card">
+            <div slot="header" class="clearfix">
+                <h3>查询城市信息</h3>
+                <div class="city-search">
+                    <el-input v-model="cityName" placeholder="请输入城市名(英文)" class="city-search-input"></el-input>
+                    <el-button type='primary' class="city-search-button" @click='searchHandle'>搜索</el-button>
+                </div>
+            </div>
+            <div v-for="item in cityMsg" :key="item.ID" class="city-list">
+                <span v-text='"城市名称："+item.Name'></span>
+                <span v-text='"国家代码："+item.CountryCode'></span>
+                <span v-text='"行政区："+item.District'></span>
+                <span v-text='"人口数："+item.Population'></span>
+            </div>
+        </el-card>
+    </div>
+    <script src="./javascripts/axios.min.js"></script>
+    <script src="./javascripts/vue.js"></script>
+    <script src="./javascripts/index.js"></script>
+    <script>
+        let city = new Vue({
+            el: '#city',
+            data: {
+                cityName: '',
+                cityMsg: [],
+            },
+            methods: {
+                searchHandle() {
+                    axios.get('/city/getCityMsg?cityName=' + this.cityName).then(res => {
+                        this.cityMsg = res.data.data
+                    })
+                }
+            },
+            mounted() {
+
+            }
+        })
+    </script>
+</body>
+
+</html>

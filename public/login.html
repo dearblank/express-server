@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="./stylesheets/index.css">
+    <style>
+        #login {
+            width: 520px;
+            margin: 50px auto;
+            padding: 40px 50px;
+            background: #fff;
+            position: relative;
+            transform: 50% 50%;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+        }
+
+        #login h1 {
+            font-size: 32px;
+            color: #454545;
+            margin-bottom: 25px;
+        }
+
+        .login-success {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            margin-left: -80px;
+            width: 240px;
+        }
+        
+        .login-error {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            margin-left: -80px;
+            width: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login">
+        <h1>登录页(mysql)</h1>
+        <el-alert title="登录成功" type="success" show-icon v-if='success' class="login-success"
+            :description='count+" 秒后将自动跳转至首页"'>
+        </el-alert>
+        <el-alert title="登录失败" show-icon  type="error" v-if='error' class="login-error"
+            :description='failMsg'>
+        </el-alert>
+        </el-alert>
+        <el-form :model="ruleLogin" :rules="rules" ref="ruleLogin" label-width="100px" class="login-form">
+            <el-form-item label="用户名" prop="username">
+                <el-input type="text" v-model="ruleLogin.username" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="password">
+                <el-input type="password" v-model="ruleLogin.password" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="submitForm('ruleLogin')">登录</el-button>
+                <el-button @click="resetForm('ruleLogin')">重置</el-button>
+            </el-form-item>
+        </el-form>
+    </div>
+    <script src="./javascripts/axios.min.js"></script>
+    <script src="./javascripts/vue.js"></script>
+    <script src="./javascripts/index.js"></script>
+    <script>
+        let login = new Vue({
+            el: '#login',
+            data() {
+                var checkUserName = (rule, value, callback) => {
+                    if (!value) {
+                        return callback(new Error('用户名不能为空'));
+                    }
+                };
+                var validatePassword = (rule, value, callback) => {
+                    if (value === '') {
+                        callback(new Error('请输入密码'));
+                    }
+                };
+                return {
+                    success: false,
+                    error: false,
+                    failMsg: '',
+                    count: 5,
+                    ruleLogin: {
+                        username: '',
+                        password: ''
+                    },
+                    rules: {
+                        password: [{
+                            validator: validatePassword,
+                            trigger: 'blur'
+                        }],
+                        username: [{
+                            validator: checkUserName,
+                            trigger: 'blur'
+                        }]
+                    }
+                };
+            },
+            methods: {
+                submitForm(formName) {
+                    this.error = false
+                    this.failMsg = ''
+                    if (this.ruleLogin.username == '' || this.ruleLogin.password == '') {
+                        return false
+                    } else {
+                        axios.post('/login', {
+                            username: this.ruleLogin.username,
+                            password: this.ruleLogin.password
+                        }).then(res => {
+                            this.success = res.data.data.success
+                            this.error = !res.data.data.success
+                            if(this.success){
+                                setInterval(() => {
+                                this.count--
+                                }, 1000)
+                                setTimeout(() => {
+                                    location.href = './'
+                                }, 5000)
+                            } else {
+                                this.failMsg = res.data.message
+                            }
+                        })
+                    }
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reg</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="./stylesheets/index.css">
+    <style>
+        #reg {
+            width: 520px;
+            margin: 50px auto;
+            padding: 40px 50px;
+            background: #fff;
+            position: relative;
+            transform: 50% 50%;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+        }
+
+        #reg h1 {
+            font-size: 32px;
+            color: #454545;
+            margin-bottom: 25px;
+        }
+
+        .reg-success {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            margin-left: -80px;
+            width: 240px;
+        }
+
+        .reg-error {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            margin-left: -80px;
+            width: 240px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="reg">
+        <h1>注册页(mongodb)</h1>
+        <el-alert title="注册成功" type="success" show-icon v-if='success' class="reg-success"
+            :description='count+" 秒后将自动跳转至首页"'>
+        </el-alert>
+        <el-alert title="注册失败" type="error" show-icon v-if='error' class="reg-error" :description='errorMsg'>
+        </el-alert>
+        <el-form :model="ruleRegister" :rules="rules" ref="ruleRegister" label-width="100px" class="register-form">
+            <el-form-item label="用户名" prop="username">
+                <el-input type="text" v-model="ruleRegister.username" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="password">
+                <el-input type="password" v-model="ruleRegister.password" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="确认密码" prop="checkPass">
+                <el-input type='password' v-model="ruleRegister.checkPass"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="submitForm('ruleRegister')">注册</el-button>
+                <el-button @click="resetForm('ruleRegister')">重置</el-button>
+            </el-form-item>
+        </el-form>
+    </div>
+    <script src="./javascripts/axios.min.js"></script>
+    <script src="./javascripts/vue.js"></script>
+    <script src="./javascripts/index.js"></script>
+    <script>
+        let reg = new Vue({
+            el: '#reg',
+            data() {
+                var checkUserName = (rule, value, callback) => {
+                    if (!value) {
+                        return callback(new Error('用户名不能为空'));
+                    } else {
+                        axios.get('/userReg/usernameExist?username=' + this.ruleRegister.username).then(
+                            res => {
+                                if (res.data.err) {
+                                    return callback(new Error(res.data.message))
+                                } else {
+                                    callback()
+                                }
+                            })
+                    }
+                };
+                var validatePassword = (rule, value, callback) => {
+                    if (value === '') {
+                        callback(new Error('请输入密码'));
+                    } else {
+                        if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[~@#$%\*-\+=:,\\?\[\]\{}]).{6,16}$/.test(
+                                value)) {
+                            return callback(new Error('请输入包括数字、大小写字母和特殊字符的6~16位字符作为密码'))
+                        }
+                        if (this.ruleRegister.checkPass !== '') {
+                            this.$refs.ruleRegister.validateField('checkPass');
+                        }
+                        callback();
+                    }
+                };
+                var validateCheckPass = (rule, value, callback) => {
+                    if (value === '') {
+                        callback(new Error('请再次输入密码'));
+                    } else if (value !== this.ruleRegister.password) {
+                        callback(new Error('两次输入密码不一致!'));
+                    } else {
+                        callback();
+                    }
+                };
+                return {
+                    error: false,
+                    errorMsg: '',
+                    success: false,
+                    count: 5,
+                    ruleRegister: {
+                        username: '',
+                        password: '',
+                        checkPass: ''
+                    },
+                    rules: {
+                        password: [{
+                            validator: validatePassword,
+                            trigger: 'blur'
+                        }],
+                        checkPass: [{
+                            validator: validateCheckPass,
+                            trigger: 'blur'
+                        }],
+                        username: [{
+                            validator: checkUserName,
+                            trigger: 'blur'
+                        }]
+                    }
+                };
+            },
+            methods: {
+                submitForm(formName) {
+                    this.success = false
+                    this.error = false
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            axios.post('/userReg', {
+                                username: this.ruleRegister.username,
+                                password: this.ruleRegister.password
+                            }).then(res => {
+                                this.success = res.data.data.success
+                                if (this.success) {
+                                    setInterval(() => {
+                                        this.count--
+                                    }, 1000)
+                                    setTimeout(() => {
+                                        location.href = './'
+                                    }, 5000)
+                                } else {
+                                    this.error = true
+                                    this.errorMsg = res.data.message
+                                }
+                            })
+                        } else {
+                            return false
+                        }
+                    })
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
